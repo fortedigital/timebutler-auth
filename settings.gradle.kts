@@ -1,0 +1,1 @@
+rootProject.name = "link.timebutler.timebutler-auth"

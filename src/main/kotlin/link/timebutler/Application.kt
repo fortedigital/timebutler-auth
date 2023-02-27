@@ -17,7 +17,7 @@ fun Application.module() {
     val dataSource = initDatabase(applicationConfig = environment.config)
     configureSerialization()
     configureSecurity()
-    configureRouting()
+    configureRouting(dataSource)
 }
 
 private fun initDatabase(applicationConfig: ApplicationConfig): DataSource {

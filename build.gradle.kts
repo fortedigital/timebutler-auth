@@ -47,5 +47,5 @@ dependencies {
     implementation("com.zaxxer:HikariCP:$hikari_version")
 
     // Webauthn
-    compileOnly("com.yubico:webauthn-server-core:$webauthn_server_version")
+    implementation("com.yubico:webauthn-server-core:$webauthn_server_version")
 }

@@ -1,15 +1,12 @@
 package link.timebutler
 
 import io.ktor.server.application.*
-import io.ktor.server.engine.*
 import io.ktor.server.netty.*
-import link.timebutler.plugins.*
+import link.timebutler.plugins.configureRouting
+import link.timebutler.plugins.configureSecurity
+import link.timebutler.plugins.configureSerialization
 
-fun main() {
-    val port = System.getenv("PORT")?.toIntOrNull() ?: 8080
-    embeddedServer(Netty, port = port, module = Application::module)
-        .start(wait = true)
-}
+fun main(args: Array<String>) = EngineMain.main(args)
 
 fun Application.module() {
     configureSerialization()

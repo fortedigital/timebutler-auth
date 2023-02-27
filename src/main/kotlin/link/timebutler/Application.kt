@@ -9,17 +9,18 @@ import link.timebutler.plugins.configureRouting
 import link.timebutler.plugins.configureSecurity
 import link.timebutler.plugins.configureSerialization
 import org.flywaydb.core.Flyway
+import javax.sql.DataSource
 
 fun main(args: Array<String>) = EngineMain.main(args)
 
 fun Application.module() {
-    initDatabase(applicationConfig = environment.config)
+    val dataSource = initDatabase(applicationConfig = environment.config)
     configureSerialization()
     configureSecurity()
     configureRouting()
 }
 
-private fun initDatabase(applicationConfig: ApplicationConfig) {
+private fun initDatabase(applicationConfig: ApplicationConfig): DataSource {
     val databaseConfig = HikariConfig().apply {
         val dbHost = applicationConfig.property("storage.database.host").getString()
         val dbPort = applicationConfig.property("storage.database.port").getString()
@@ -40,6 +41,8 @@ private fun initDatabase(applicationConfig: ApplicationConfig) {
         connectionTimeout = 100000
         maxLifetime = 300000
     }
-    val databaseMigrator = Flyway.configure().dataSource(HikariDataSource(databaseConfig)).load()
+    val dataSource = HikariDataSource(databaseConfig)
+    val databaseMigrator = Flyway.configure().dataSource(dataSource).load()
     databaseMigrator.migrate()
+    return dataSource
 }

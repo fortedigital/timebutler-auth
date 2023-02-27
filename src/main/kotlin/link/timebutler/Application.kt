@@ -20,6 +20,8 @@ fun Application.module() {
     configureRouting(dataSource)
 }
 
+internal fun ApplicationConfig.isDevelopment() = this.propertyOrNull("ktor.development")?.getString()?.toBoolean() ?: false
+
 private fun initDatabase(applicationConfig: ApplicationConfig): DataSource {
     val databaseConfig = HikariConfig().apply {
         val dbHost = applicationConfig.property("storage.database.host").getString()
@@ -42,7 +44,13 @@ private fun initDatabase(applicationConfig: ApplicationConfig): DataSource {
         maxLifetime = 300000
     }
     val dataSource = HikariDataSource(databaseConfig)
-    val databaseMigrator = Flyway.configure().dataSource(dataSource).load()
+    val databaseMigrator = Flyway.configure()
+        .dataSource(dataSource)
+        .cleanDisabled(!applicationConfig.isDevelopment())
+        .load()
+    if (applicationConfig.isDevelopment()) {
+        databaseMigrator.clean()
+    }
     databaseMigrator.migrate()
     return dataSource
 }

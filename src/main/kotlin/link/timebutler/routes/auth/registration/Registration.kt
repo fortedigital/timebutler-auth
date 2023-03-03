@@ -22,7 +22,7 @@ internal fun Route.registration(relyingParty: RelyingParty, userRepository: User
                 .builder()
                 .residentKey(ResidentKeyRequirement.PREFERRED)
                 .authenticatorAttachment(AuthenticatorAttachment.CROSS_PLATFORM)
-                .userVerification(UserVerificationRequirement.PREFERRED)
+                .userVerification(UserVerificationRequirement.DISCOURAGED)
                 .build()
             val registrationOptions = StartRegistrationOptions
                 .builder()

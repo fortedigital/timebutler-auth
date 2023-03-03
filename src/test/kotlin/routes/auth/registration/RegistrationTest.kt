@@ -57,7 +57,7 @@ internal class RegistrationTest {
             authenticatorSelection["residentKey"]!!.jsonPrimitive.content
         )
         assertEquals(
-            UserVerificationRequirement.PREFERRED.value,
+            UserVerificationRequirement.DISCOURAGED.value,
             authenticatorSelection["userVerification"]!!.jsonPrimitive.content
         )
     }

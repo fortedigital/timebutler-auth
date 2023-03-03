@@ -13,7 +13,7 @@ import org.intellij.lang.annotations.Language
 import java.util.*
 import javax.sql.DataSource
 
-class AuthCredentialRepository(private val dataSource: DataSource) : CredentialRepository {
+internal class AuthCredentialRepository(private val dataSource: DataSource, private val userRepository: UserRepository) : CredentialRepository {
     override fun getCredentialIdsForUsername(username: String?): Set<PublicKeyCredentialDescriptor> {
         if (username == null) {
             return emptySet()
@@ -49,14 +49,7 @@ class AuthCredentialRepository(private val dataSource: DataSource) : CredentialR
             return Optional.empty()
         }
 
-        @Language("PostgreSQL")
-        val query = """
-            select user_handle from users where username = :username
-        """.trimIndent()
-
-        val userHandle = sessionOf(dataSource).use { session ->
-            session.run(queryOf(query, mapOf("username" to username)).map { it.bytes("user_handle") }.asSingle)
-        }?.let { ByteArray(it) }
+        val userHandle = userRepository.getByUsername(username)?.let { ByteArray(it.userHandle) }
         return Optional.ofNullable(userHandle)
     }
 
@@ -67,21 +60,8 @@ class AuthCredentialRepository(private val dataSource: DataSource) : CredentialR
 
         val userHandleUUID = UUID.fromString(userHandle.bytes.decodeToString())
 
-
-        @Language("PostgreSQL")
-        val query = """
-            select username from users where user_handle = :userHandle
-        """.trimIndent()
-
-        val username = sessionOf(dataSource).use { session ->
-            session.run(
-                queryOf(
-                    query,
-                    mapOf("userHandle" to userHandleUUID)
-                ).map { it.string("username") }.asSingle
-            )
-        }
-        return Optional.ofNullable(username)
+        val user = userRepository.getByUserHandle(userHandleUUID)
+        return Optional.ofNullable(user?.username)
     }
 
     override fun lookup(credentialId: ByteArray?, userHandle: ByteArray?): Optional<RegisteredCredential> {

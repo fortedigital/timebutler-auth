@@ -34,8 +34,8 @@ dependencies {
     implementation("io.ktor:ktor-server-netty-jvm:$ktor_version")
 
     // tests
-    testImplementation("io.ktor:ktor-server-tests-jvm:$ktor_version")
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
+    testImplementation("io.ktor:ktor-server-test-host:$ktor_version")
+    testImplementation(kotlin("test"))
 
 
     // Logging
@@ -49,6 +49,21 @@ dependencies {
 
     // Webauthn
     implementation("com.yubico:webauthn-server-core:$webauthn_server_version")
+}
+
+tasks {
+    test {
+        environment(
+            "TIMEBUTLER_AUTH_DATABASE_HOST" to "localhost",
+            "TIMEBUTLER_AUTH_DATABASE_PORT" to "5432",
+            "TIMEBUTLER_AUTH_DATABASE_NAME" to "AUTH_DB",
+            "TIMEBUTLER_AUTH_DATABASE_USER" to "postgres",
+            "TIMEBUTLER_AUTH_DATABASE_PASSWORD" to "superbadpassword",
+            "TIMEBUTLER_AUTH_DOMAIN" to "localhost",
+            "TIMEBUTLER_AUTH_ALLOWED_ORIGINS" to "http://localhost:3000"
+        )
+        useJUnitPlatform()
+    }
 }
 
 kotlin {

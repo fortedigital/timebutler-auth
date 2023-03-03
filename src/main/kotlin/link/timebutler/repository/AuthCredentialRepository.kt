@@ -5,10 +5,11 @@ import com.yubico.webauthn.RegisteredCredential
 import com.yubico.webauthn.data.ByteArray
 import com.yubico.webauthn.data.PublicKeyCredentialDescriptor
 import java.util.*
+import javax.sql.DataSource
 
-class AuthCredentialRepository : CredentialRepository {
+class AuthCredentialRepository(private val dataSource: DataSource) : CredentialRepository {
     override fun getCredentialIdsForUsername(username: String?): MutableSet<PublicKeyCredentialDescriptor> {
-        TODO("Not yet implemented")
+        return mutableSetOf()
     }
 
     override fun getUserHandleForUsername(username: String?): Optional<ByteArray> {

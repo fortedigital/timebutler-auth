@@ -1,7 +1,6 @@
 package link.timebutler
 
 import com.yubico.webauthn.RelyingParty
-import com.yubico.webauthn.StartRegistrationOptions
 import com.yubico.webauthn.data.PublicKeyCredentialParameters
 import com.yubico.webauthn.data.RelyingPartyIdentity
 import com.zaxxer.hikari.HikariConfig
@@ -23,19 +22,19 @@ fun Application.module() {
 
     val identity = RelyingPartyIdentity
         .builder()
-        .id("timebutler.link")
+        .id(environment.config.property("auth.domain").getString())
         .name("Timebutler Auth")
         .build()
     val relyingParty = RelyingParty
         .builder()
         .identity(identity)
-        .credentialRepository(AuthCredentialRepository())
-        .origins(setOf("dev.timebutler.link", "prod.timebutler.link"))
+        .credentialRepository(AuthCredentialRepository(dataSource))
+        .origins(environment.config.property("auth.allowed_origins").getString().split(",").toSet())
         .preferredPubkeyParams(listOf(PublicKeyCredentialParameters.ES256, PublicKeyCredentialParameters.RS256))
         .build()
     configureSerialization()
     configureSecurity()
-    configureRouting(dataSource)
+    configureRouting(dataSource, relyingParty)
 }
 
 internal fun ApplicationConfig.isDevelopment() =

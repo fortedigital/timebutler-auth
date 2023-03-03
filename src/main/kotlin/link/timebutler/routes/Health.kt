@@ -7,7 +7,7 @@ import kotliquery.queryOf
 import kotliquery.sessionOf
 import javax.sql.DataSource
 
-fun Routing.health(dataSource: DataSource) {
+internal fun Routing.health(dataSource: DataSource) {
     route("health") {
         get("alive") {
             call.respondText("ALIVE")

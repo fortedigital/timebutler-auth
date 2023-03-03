@@ -1,5 +1,6 @@
 CREATE TABLE credentials (
     id serial primary key,
+    credential_id varchar not null,
     user_id int not null,
     key_id varchar not null unique,
     public_key bytea not null,

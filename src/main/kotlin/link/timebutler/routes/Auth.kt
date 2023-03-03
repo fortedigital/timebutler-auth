@@ -17,7 +17,7 @@ internal fun Routing.auth(relyingParty: RelyingParty) {
                     .builder()
                     .name("Alexander")
                     .displayName("Alexander den store")
-                    .id(ByteArray.fromHex(HexFormat.of().formatHex(UUID.randomUUID().toString().toByteArray())))
+                    .id(ByteArray(UUID.randomUUID().toString().toByteArray()))
                     .build()
                 val selections = AuthenticatorSelectionCriteria
                     .builder()

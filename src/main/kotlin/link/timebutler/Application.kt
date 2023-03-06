@@ -46,12 +46,9 @@ private fun initDatabase(applicationConfig: ApplicationConfig): DataSource {
     }
     val dataSource = HikariDataSource(databaseConfig)
     val databaseMigrator = Flyway.configure()
+        .cleanDisabled(applicationConfig.property("storage.flyway.cleandisabled").getString().toBooleanStrict())
         .dataSource(dataSource)
-        .cleanDisabled(!applicationConfig.isDevelopment())
         .load()
-    if (applicationConfig.isDevelopment()) {
-        databaseMigrator.clean()
-    }
     databaseMigrator.migrate()
     return dataSource
 }

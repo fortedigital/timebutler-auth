@@ -60,7 +60,8 @@ tasks {
             "TIMEBUTLER_AUTH_DATABASE_USER" to "postgres",
             "TIMEBUTLER_AUTH_DATABASE_PASSWORD" to "superbadpassword",
             "TIMEBUTLER_AUTH_DOMAIN" to "localhost",
-            "TIMEBUTLER_AUTH_ALLOWED_ORIGINS" to "http://localhost:3000"
+            "TIMEBUTLER_AUTH_ALLOWED_ORIGINS" to "http://localhost:3000",
+            "FLYWAY_CLEAN_DISABLED" to "false"
         )
         useJUnitPlatform()
     }

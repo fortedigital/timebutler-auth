@@ -13,8 +13,7 @@ import javax.sql.DataSource
 
 // FIXME
 fun Application.configureRouting(dataSource: DataSource) {
-    val userRepository = UserRepository(dataSource)
-    val credentialRepository = AuthCredentialRepository(dataSource = dataSource, userRepository = userRepository)
+    val credentialRepository = AuthCredentialRepository(dataSource = dataSource, userRepository = UserRepository(dataSource))
 
     val identity = RelyingPartyIdentity
         .builder()
@@ -32,7 +31,7 @@ fun Application.configureRouting(dataSource: DataSource) {
     routing {
         health(dataSource)
         route("api") {
-            auth(relyingParty = relyingParty, userRepository = userRepository)
+            auth(relyingParty = relyingParty, credentialRepository = credentialRepository)
         }
     }
 }

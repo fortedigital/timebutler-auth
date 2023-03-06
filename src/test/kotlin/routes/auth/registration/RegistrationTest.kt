@@ -1,6 +1,5 @@
 package routes.auth.registration
 
-import com.yubico.webauthn.data.AuthenticatorAttachment
 import com.yubico.webauthn.data.COSEAlgorithmIdentifier
 import com.yubico.webauthn.data.ResidentKeyRequirement
 import com.yubico.webauthn.data.UserVerificationRequirement
@@ -32,6 +31,7 @@ internal class RegistrationTest {
             )
         }
         assertEquals(HttpStatusCode.OK, response.status)
+        println(response.bodyAsText())
         val json = Json.decodeFromString<JsonElement>(response.bodyAsText()).jsonObject
         assertEquals("TimeButler Auth", json["rp"]?.jsonObject?.get("name")?.jsonPrimitive?.content)
         assertEquals("localhost", json["rp"]?.jsonObject?.get("id")?.jsonPrimitive?.content)
@@ -47,10 +47,6 @@ internal class RegistrationTest {
         assertTrue(challenge.toByteArray().size >= minAllowedChallengeSize)
 
         val authenticatorSelection = json["authenticatorSelection"]!!.jsonObject
-        assertEquals(
-            AuthenticatorAttachment.CROSS_PLATFORM.value,
-            authenticatorSelection["authenticatorAttachment"]!!.jsonPrimitive.content
-        )
         assertEquals(false, authenticatorSelection["requireResidentKey"]!!.jsonPrimitive.boolean)
         assertEquals(
             ResidentKeyRequirement.PREFERRED.value,

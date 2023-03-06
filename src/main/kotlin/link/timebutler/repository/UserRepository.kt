@@ -1,6 +1,7 @@
 package link.timebutler.repository
 
 import kotliquery.Row
+import kotliquery.TransactionalSession
 import kotliquery.queryOf
 import kotliquery.sessionOf
 import link.timebutler.domain.User
@@ -32,10 +33,26 @@ internal class UserRepository(private val dataSource: DataSource) {
             session.run(queryOf(query, mapOf("userHandle" to userHandle)).map(Row::mapToUser).asSingle)
         }
     }
+
+    fun save(transaction: TransactionalSession, user: User): User? {
+        @Language("PostgreSQL")
+        val query = """
+            insert into users (user_handle, username) values (:userhandle, :username) on conflict do nothing returning *
+        """.trimIndent()
+        return transaction.run(
+            queryOf(
+                query, mapOf(
+                    "userhandle" to user.userHandleUUID,
+                    "username" to user.username
+                )
+            ).map(Row::mapToUser).asSingle
+        )
+    }
 }
+
 
 private fun Row.mapToUser() = User(
     id = int("id"),
-    userHandle = uuid("user_handle"),
+    userHandleUUID = uuid("user_handle"),
     username = string("username")
 )

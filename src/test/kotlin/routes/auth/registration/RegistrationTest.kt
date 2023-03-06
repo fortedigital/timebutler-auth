@@ -31,7 +31,6 @@ internal class RegistrationTest {
             )
         }
         assertEquals(HttpStatusCode.OK, response.status)
-        println(response.bodyAsText())
         val json = Json.decodeFromString<JsonElement>(response.bodyAsText()).jsonObject
         assertEquals("TimeButler Auth", json["rp"]?.jsonObject?.get("name")?.jsonPrimitive?.content)
         assertEquals("localhost", json["rp"]?.jsonObject?.get("id")?.jsonPrimitive?.content)

@@ -21,7 +21,7 @@ internal class RegistrationTest {
     fun options() = testApplication {
         val minAllowedChallengeSize = 16
 
-        val response = client.post("/auth/register/options") {
+        val response = client.post("/api/auth/register/options") {
             contentType(ContentType.Application.Json)
             setBody(
                 """
@@ -64,7 +64,7 @@ internal class RegistrationTest {
 
     @Test
     fun `only post method allowed`() = testApplication {
-        assertEquals(HttpStatusCode.MethodNotAllowed, client.get("/auth/register/options").status)
+        assertEquals(HttpStatusCode.MethodNotAllowed, client.get("/api/auth/register/options").status)
 
     }
 }

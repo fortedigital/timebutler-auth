@@ -31,7 +31,9 @@ fun Application.configureRouting(dataSource: DataSource) {
 
     routing {
         health(dataSource)
-        auth(relyingParty = relyingParty, userRepository = userRepository)
+        route("api") {
+            auth(relyingParty = relyingParty, userRepository = userRepository)
+        }
     }
 }
 

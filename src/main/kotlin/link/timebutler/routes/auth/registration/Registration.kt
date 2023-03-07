@@ -23,11 +23,18 @@ internal fun Route.registration(relyingParty: RelyingParty, credentialRepository
     route("register") {
         post("options") {
             val body = call.receive<RegistrationOptionsDTO>()
-            val user = credentialRepository.userRepository.getByUsername(body.username)?.toUserIdentity() ?: User(userHandleUUID = UUID.randomUUID(), username = body.username).toUserIdentity()
+            val user = try {
+                credentialRepository.userRepository.getByUsername(body.username)?.toUserIdentity() ?: User(
+                    userHandleUUID = UUID.randomUUID(),
+                    username = body.username
+                ).toUserIdentity()
+            } catch (e: IllegalArgumentException) {
+                return@post call.respond(HttpStatusCode.BadRequest, e.localizedMessage)
+            }
             val selections = AuthenticatorSelectionCriteria
                 .builder()
                 .residentKey(ResidentKeyRequirement.PREFERRED)
-                .userVerification(UserVerificationRequirement.DISCOURAGED)
+                .userVerification(UserVerificationRequirement.PREFERRED)
                 .build()
             val registrationOptions = StartRegistrationOptions
                 .builder()
@@ -42,14 +49,21 @@ internal fun Route.registration(relyingParty: RelyingParty, credentialRepository
         }
         post("verify") {
             val request = call.sessions.get<RegistrationOptionsSession>()?.toOptions()
-                ?: return@post call.respond(HttpStatusCode.BadRequest, "Challenge not generated, need to start registration before verification can happen.")
+                ?: return@post call.respond(
+                    HttpStatusCode.BadRequest,
+                    "Challenge not generated, need to start registration before verification can happen."
+                )
             val body = call.receive<PublicKeyDTO>()
             call.application.log.trace("Request verification started with requestoptions: ${request.toJson()}")
             if (request.user.name != body.username) {
-                return@post call.respond(HttpStatusCode.BadRequest, "Username ${body.username} does not match the request username")
+                return@post call.respond(
+                    HttpStatusCode.BadRequest,
+                    "Username ${body.username} does not match the request username"
+                )
             }
             call.sessions.clear<RegistrationOptionsSession>()
-            val user = credentialRepository.userRepository.getByUsername(request.user.name)?.toUserIdentity() ?: request.user
+            val user =
+                credentialRepository.userRepository.getByUsername(request.user.name)?.toUserIdentity() ?: request.user
             val publicKey = PublicKeyCredential.parseRegistrationResponseJson(body.response)
             val finishRegistrationOptions = FinishRegistrationOptions
                 .builder()

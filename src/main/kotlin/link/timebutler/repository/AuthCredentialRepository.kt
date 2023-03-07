@@ -91,7 +91,7 @@ internal class AuthCredentialRepository(private val dataSource: DataSource, val 
             session.run(
                 queryOf(
                     query,
-                    mapOf("credentialId" to credentialId, "userHandle" to userHandleUUID)
+                    mapOf("credentialId" to credentialId.base64Url, "userHandle" to userHandleUUID)
                 ).map { it.toRegisteredCredential() }.asSingle
             )
         }
@@ -138,10 +138,12 @@ internal class AuthCredentialRepository(private val dataSource: DataSource, val 
                         ),
                         username = credential.user.name
                     )
-                ) ?: userRepository.getByUsername(credential.user.name)?.id ?: throw IllegalStateException("Could not store credential based on user")
+                ) ?: userRepository.getByUsername(credential.user.name)?.id
+                ?: throw IllegalStateException("Could not store credential based on user")
                 tx.run(
                     queryOf(
-                        query, mapOf(
+                        query,
+                        mapOf(
                             "credentialId" to credential.credentialId,
                             "userId" to userId,
                             "publicKey" to credential.publicKey,
@@ -157,11 +159,40 @@ internal class AuthCredentialRepository(private val dataSource: DataSource, val 
         return credential
     }
 
+    fun updateCredential(credential: RegisteredCredential, signatureCount: Long) {
+        val user = userRepository.getByUserHandle(
+            UUID.fromString(
+                Base64.getUrlDecoder().decode(credential.userHandle.base64Url).decodeToString()
+            )
+        ) ?: throw IllegalStateException() // FIXME
+        return sessionOf(dataSource).use { session ->
+            @Language("PostgreSQL")
+            val query = """
+                update credentials 
+                set 
+                    signature_count = :signatureCount, 
+                    updated_at = current_timestamp 
+                where credential_id = :credentialId and user_id = :userId
+            """.trimIndent()
+            val queryExecutor = queryOf(
+                query,
+                mapOf(
+                    "signatureCount" to signatureCount,
+                    "userId" to user.id,
+                    "credentialId" to Base64.getUrlDecoder().decode(credential.credentialId.base64Url).decodeToString()
+                )
+            )
+            session.run(
+                queryExecutor.asUpdate
+            )
+        }
+    }
+
     private fun Row.toRegisteredCredential() = RegisteredCredential
         .builder()
-        .credentialId(ByteArray(bytes("credentials.credential_id")))
-        .userHandle(ByteArray(bytes("u.user_handle")))
-        .publicKeyCose(ByteArray(bytes("credentials.public_key")))
+        .credentialId(ByteArray(bytes("credential_id")))
+        .userHandle(ByteArray(uuid("user_handle").toString().encodeToByteArray()))
+        .publicKeyCose(ByteArray(bytes("public_key")))
         .signatureCount(long("signature_count"))
         .build()
 

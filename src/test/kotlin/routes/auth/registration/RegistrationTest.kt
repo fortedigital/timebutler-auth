@@ -7,9 +7,12 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.server.testing.*
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.*
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertDoesNotThrow
+import org.junit.jupiter.api.assertThrows
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -25,7 +28,7 @@ internal class RegistrationTest {
             setBody(
                 """
                 {
-                    "username": "hei123" 
+                    "username": "hei123@fortedigital.com" 
                 }
             """.trimMargin()
             )
@@ -34,7 +37,7 @@ internal class RegistrationTest {
         val json = Json.decodeFromString<JsonElement>(response.bodyAsText()).jsonObject
         assertEquals("TimeButler Auth", json["rp"]?.jsonObject?.get("name")?.jsonPrimitive?.content)
         assertEquals("localhost", json["rp"]?.jsonObject?.get("id")?.jsonPrimitive?.content)
-        assertEquals("hei123", json["user"]?.jsonObject?.get("name")?.jsonPrimitive?.content)
+        assertEquals("hei123@fortedigital.com", json["user"]?.jsonObject?.get("name")?.jsonPrimitive?.content)
 
         val acceptedPublicKeyTypes = json["pubKeyCredParams"]?.jsonArray?.map {
             COSEAlgorithmIdentifier.fromId(it.jsonObject["alg"]!!.jsonPrimitive.long).get()
@@ -55,6 +58,66 @@ internal class RegistrationTest {
             UserVerificationRequirement.DISCOURAGED.value,
             authenticatorSelection["userVerification"]!!.jsonPrimitive.content
         )
+    }
+
+    @Test
+    fun `username cannot be other than forte domain email`() = testApplication {
+        assertThrows<IllegalArgumentException> {
+            runBlocking {
+                client.post("/api/auth/register/options") {
+                    contentType(ContentType.Application.Json)
+                    setBody(
+                        """
+                        {
+                            "username": "hei123" 
+                        }
+                    """.trimMargin()
+                    )
+                }
+            }
+        }
+        assertDoesNotThrow {
+            runBlocking {
+                client.post("/api/auth/register/options") {
+                    contentType(ContentType.Application.Json)
+                    setBody(
+                        """
+                        {
+                            "username": "hei123@fortedigital.no" 
+                        }
+                    """.trimMargin()
+                    )
+                }
+            }
+        }
+        assertDoesNotThrow {
+            runBlocking {
+                client.post("/api/auth/register/options") {
+                    contentType(ContentType.Application.Json)
+                    setBody(
+                        """
+                        {
+                            "username": "hei123@fortedigital.com" 
+                        }
+                    """.trimMargin()
+                    )
+                }
+            }
+        }
+        assertThrows<IllegalArgumentException> {
+            runBlocking {
+                client.post("/api/auth/register/options") {
+                    contentType(ContentType.Application.Json)
+                    setBody(
+                        """
+                        {
+                            "username": "hei123@mail.com" 
+                        }
+                    """.trimMargin()
+                    )
+                }
+            }
+        }
     }
 
     @Test

@@ -23,7 +23,7 @@ internal fun Route.registration(relyingParty: RelyingParty, credentialRepository
     route("register") {
         post("options") {
             val body = call.receive<RegistrationOptionsDTO>()
-            val user = credentialRepository.userRepository.getByUsername(body.username)?.toUserIdentity() ?: createUserIdentity(body.username)
+            val user = credentialRepository.userRepository.getByUsername(body.username)?.toUserIdentity() ?: User(userHandleUUID = UUID.randomUUID(), username = body.username).toUserIdentity()
             val selections = AuthenticatorSelectionCriteria
                 .builder()
                 .residentKey(ResidentKeyRequirement.PREFERRED)
@@ -85,13 +85,6 @@ private fun User.toUserIdentity() = UserIdentity
     .name(username)
     .displayName(username)
     .id(ByteArray(userHandle))
-    .build()
-
-private fun createUserIdentity(username: String) = UserIdentity
-    .builder()
-    .name(username)
-    .displayName(username)
-    .id(ByteArray(UUID.randomUUID().toString().encodeToByteArray()))
     .build()
 
 @Serializable

@@ -34,10 +34,10 @@ internal class UserRepository(private val dataSource: DataSource) {
         }
     }
 
-    fun save(transaction: TransactionalSession, user: User): User? {
+    fun save(transaction: TransactionalSession, user: User): Int? {
         @Language("PostgreSQL")
         val query = """
-            insert into users (user_handle, username) values (:userhandle, :username) on conflict do nothing returning *
+            insert into users (user_handle, username) values (:userhandle, :username) on conflict do nothing returning id
         """.trimIndent()
         return transaction.run(
             queryOf(
@@ -45,7 +45,7 @@ internal class UserRepository(private val dataSource: DataSource) {
                     "userhandle" to user.userHandleUUID,
                     "username" to user.username
                 )
-            ).map(Row::mapToUser).asSingle
+            ).map { it.int("id") }.asSingle
         )
     }
 }

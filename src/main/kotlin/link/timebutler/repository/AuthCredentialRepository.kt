@@ -14,6 +14,7 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.util.*
 import javax.sql.DataSource
+import kotlin.IllegalStateException
 import kotlin.Int
 import kotlin.Long
 import kotlin.String
@@ -42,7 +43,7 @@ internal class AuthCredentialRepository(private val dataSource: DataSource, val 
                 ).map {
                     PublicKeyCredentialDescriptor
                         .builder()
-                        .id(ByteArray.fromBase64(it.string("credential_id")))
+                        .id(ByteArray.fromBase64Url(it.string("credential_id")))
                         .transports(it.array<String>("transports").map(AuthenticatorTransport::of).toSet())
                         .type(PublicKeyCredentialType.PUBLIC_KEY)
                         .build()
@@ -129,7 +130,7 @@ internal class AuthCredentialRepository(private val dataSource: DataSource, val 
         """.trimIndent()
         val credential = sessionOf(dataSource).use { session ->
             session.transaction { tx ->
-                val user = userRepository.save(
+                val userId = userRepository.save(
                     transaction = tx,
                     user = User(
                         userHandleUUID = UUID.fromString(
@@ -137,19 +138,19 @@ internal class AuthCredentialRepository(private val dataSource: DataSource, val 
                         ),
                         username = credential.user.name
                     )
-                )!!
+                ) ?: userRepository.getByUsername(credential.user.name)?.id ?: throw IllegalStateException("Could not store credential based on user")
                 tx.run(
                     queryOf(
                         query, mapOf(
                             "credentialId" to credential.credentialId,
-                            "userId" to user.id,
+                            "userId" to userId,
                             "publicKey" to credential.publicKey,
                             "transports" to session.createArrayOf("text", credential.transports.map { it.id }),
                             "signatureCount" to credential.signatureCount,
                             "attestationObject" to credential.attestationObject.replace("\u0000", ""),
                             "clientDataJson" to credential.clientDataJson.replace("\u0000", "")
                         )
-                    ).map { it.toStoredCredential(user) }.asSingle
+                    ).map { it.toStoredCredential(credential.user) }.asSingle
                 )
             }
         }!!
@@ -166,7 +167,7 @@ internal class AuthCredentialRepository(private val dataSource: DataSource, val 
 
 }
 
-private fun Row.toStoredCredential(user: User): StoredCredential {
+private fun Row.toStoredCredential(user: UserIdentity): StoredCredential {
     return StoredCredential(
         id = int("id"),
         credentialId = string("credential_id"),
@@ -177,8 +178,7 @@ private fun Row.toStoredCredential(user: User): StoredCredential {
         publicKey = bytes("public_key"),
         signatureCount = long("signature_count"),
         transports = array<String>("transports").map(AuthenticatorTransport::of),
-        user = UserIdentity.builder().name(user.username).displayName(user.username).id(ByteArray(user.userHandle))
-            .build()
+        user = user
     )
 }
 

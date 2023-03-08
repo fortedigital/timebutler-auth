@@ -24,6 +24,12 @@ internal fun ApplicationConfig.isDevelopment() =
     this.propertyOrNull("ktor.development")?.getString()?.toBoolean() ?: false
 
 private fun initDatabase(applicationConfig: ApplicationConfig): DataSource {
+    val dataSource = getDataSource(applicationConfig)
+    getFlyway(applicationConfig, dataSource).migrate()
+    return dataSource
+}
+
+internal fun getDataSource(applicationConfig: ApplicationConfig): DataSource {
     val databaseConfig = HikariConfig().apply {
         val dbHost = applicationConfig.property("storage.database.host").getString()
         val dbPort = applicationConfig.property("storage.database.port").getString()
@@ -44,11 +50,13 @@ private fun initDatabase(applicationConfig: ApplicationConfig): DataSource {
         connectionTimeout = 100000
         maxLifetime = 300000
     }
-    val dataSource = HikariDataSource(databaseConfig)
-    val databaseMigrator = Flyway.configure()
-        .cleanDisabled(applicationConfig.property("storage.flyway.cleandisabled").getString().toBooleanStrict())
-        .dataSource(dataSource)
-        .load()
-    databaseMigrator.migrate()
-    return dataSource
+    return HikariDataSource(databaseConfig)
 }
+
+internal fun getFlyway(
+    applicationConfig: ApplicationConfig,
+    dataSource: DataSource
+) = Flyway.configure()
+    .cleanDisabled(applicationConfig.property("storage.flyway.cleandisabled").getString().toBooleanStrict())
+    .dataSource(dataSource)
+    .load()

@@ -53,6 +53,7 @@ internal fun Route.registration(relyingParty: RelyingParty, credentialRepository
                     HttpStatusCode.BadRequest,
                     "Challenge not generated, need to start registration before verification can happen."
                 )
+            call.sessions.clear<RegistrationOptionsSession>()
             val body = call.receive<PublicKeyDTO>()
             call.application.log.trace("Request verification started with requestoptions: ${request.toJson()}")
             if (request.user.name != body.username) {
@@ -61,7 +62,6 @@ internal fun Route.registration(relyingParty: RelyingParty, credentialRepository
                     "Username ${body.username} does not match the request username"
                 )
             }
-            call.sessions.clear<RegistrationOptionsSession>()
             val user =
                 credentialRepository.userRepository.getByUsername(request.user.name)?.toUserIdentity() ?: request.user
             val publicKey = PublicKeyCredential.parseRegistrationResponseJson(body.response)
